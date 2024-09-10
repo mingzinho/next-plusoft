@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Bem-vindo, {{ session['user_email'] }}</h2>
+<h3>Selecione uma tabela para gerenciar:</h3>
+<ul>
+    {% for table in tables %}
+    <li><a href="{{ url_for('view_table', table_name=table) }}">{{ table }}</a></li>
+    {% endfor %}
+</ul>
+{% if data_html %}
+<h3>Dados da Tabela:</h3>
+{{ data_html|safe }}
+{% endif %}
+{% endblock %}

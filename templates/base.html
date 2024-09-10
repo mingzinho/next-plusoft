@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Sua Aplicação Flask</title>
+    <!-- Inclua o Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Seu CSS personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Menu de navegação -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{{ url_for('index') }}">Minha Aplicação</a>
+        <!-- Links de navegação -->
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Início</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('scrape') }}">Web Scraping</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('ml') }}">Machine Learning</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('consumir_api_amazon') }}">Consumir API Amazon</a></li>
+            </ul>
+            <!-- Link para logout -->
+            <span class="navbar-text">
+                Logado como {{ session['user_email'] }} | <a href="{{ url_for('logout') }}">Sair</a>
+            </span>
+        </div>
+    </nav>
+
+    <!-- Conteúdo da página -->
+    <div class="container">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Inclua o Bootstrap JS e jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

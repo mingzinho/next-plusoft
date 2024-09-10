@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Tabela: {{ table_name }}</h2>
+
+<!-- Exibir dados da tabela -->
+{{ data_html|safe }}
+
+<!-- Formulário para upload de arquivo Excel -->
+<h3>Upload de Dados</h3>
+<form id="uploadForm" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".xlsx, .xls" required>
+    <input type="hidden" name="confirm" value="true">
+    <button type="submit">Enviar</button>
+</form>
+
+<!-- Link para download de dados -->
+<a href="{{ url_for('download_table', table_name=table_name) }}">Download dos Dados em Excel</a>
+
+<!-- Inclusão do jQuery e do script para processamento do formulário -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function() {
+        $("#uploadForm").on("submit", function(event) {
+            event.preventDefault(); // Impede o comportamento padrão de envio do formulário
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: "{{ url_for('view_table', table_name=table_name) }}", // URL para onde os dados serão enviados
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    // Verifica o status da resposta
+                    if (response.status === 'success') {
+                        alert(response.message); // Exibe o popup de sucesso
+                        setTimeout(function() {
+                            location.reload(); // Atualiza a página após um breve atraso
+                        }, 1000); // Adiciona um atraso antes de atualizar a página
+                    } else if (response.status === 'error' || response.status === 'warning') {
+                        alert(response.message); // Exibe o popup de erro ou aviso
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Ocorreu um erro ao enviar o arquivo.');
+                }
+            });
+        });
+    });
+</script>
+
+{% endblock %}

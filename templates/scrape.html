@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Web Scraping - MercadoLivre</h2>
+<form method="POST">
+    <label for="platform">Escolha a plataforma:</label>
+    <select name="platform" id="platform" required>
+        <option value="mercadolivre">Mercado Livre</option>
+        <option value="amazon">Amazon</option>
+    </select>
+
+    <label for="url">URL:</label>
+    <input type="text" name="url" id="url" required>
+
+    <button type="submit">Iniciar Scraping</button>
+</form>
+
+
+
+{% if success %}
+    <p class="success">{{ success }}</p>
+    {% if data_html %}
+        <h3>Dados Raspados</h3>
+        <div>{{ data_html | safe }}</div>
+        <a href="{{ excel_link }}" download>Baixar Dados (Excel)</a>
+        <a href="{{ csv_link }}" download>Baixar Dados (CSV)</a>
+    {% endif %}
+{% endif %}
+
+{% if error %}
+    <p class="error">{{ error }}</p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Produtos Consumidos da API da Amazon</h2>
+
+<!-- Exibir dados da tabela -->
+{{ data_html|safe }}
+
+<!-- Link para voltar -->
+<a href="{{ url_for('index') }}">Voltar ao início</a>
+
+{% endblock %}
