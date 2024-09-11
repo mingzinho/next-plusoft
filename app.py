@@ -13,10 +13,10 @@ app.secret_key = 'sua_chave_secreta_aqui'  # Chave secreta para sessões
 # Configuração do banco de dados
 connection_string = (
     'Driver={ODBC Driver 18 for SQL Server};'
-    'Server=tcp:bancoming.database.windows.net,1433;'
-    'Database=bancoplusoft;'
-    'Uid=mingplusoft;'
-    'Pwd=Ming@123;'
+    'Server=tcp:seuservidordedados.database.windows.net,1433;'
+    'Database=seubancodedados;'
+    'Uid=seuid;'
+    'Pwd=suasenha;'
     'Encrypt=yes;'
     'TrustServerCertificate=no;'
     'Connection Timeout=30;'
