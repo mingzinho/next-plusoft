@@ -1,6 +1,6 @@
 Para executar a aplicação siga os seguintes passos:
 
-Ajuste os dados do banco em app.py para fazer a conexão com o banco.
+Ajuste os dados do banco e da API em app.py para fazer a conexão com o banco e API. 
 
 Baixar driver obdc para conseguir fazer conexao com o banco de dados:
 https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver16
