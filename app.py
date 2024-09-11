@@ -202,7 +202,7 @@ def consumir_api_amazon():
                 "is_prime": "false"
             }
             headers = {
-                "x-rapidapi-key": "f8ab92d4f4msh7cd359334023e09p1e2f2djsnca168ff28f37",
+                "x-rapidapi-key": "senhaapi",
                 "x-rapidapi-host": "real-time-amazon-data.p.rapidapi.com"
             }
             response = requests.get(url, headers=headers, params=querystring)
