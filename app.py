@@ -8,7 +8,7 @@ from scraping import scrape_amazon, scrape_mercadolivre
 from ml import perform_machine_learning
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_aqui'  # Chave secreta para sessões
+app.secret_key = 'ming123456'  # Chave secreta para sessões
 
 # Configuração do banco de dados
 connection_string = (
@@ -202,7 +202,7 @@ def consumir_api_amazon():
                 "is_prime": "false"
             }
             headers = {
-                "x-rapidapi-key": "f8ab92d4f4msh7cd359334023e09p1e2f2djsnca168ff28f37",
+                "x-rapidapi-key": "senhaapi",
                 "x-rapidapi-host": "real-time-amazon-data.p.rapidapi.com"
             }
             response = requests.get(url, headers=headers, params=querystring)
