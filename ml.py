@@ -7,6 +7,7 @@ import io
 import os
 import pandas as pd
 import numpy as np
+from datetime import datetime
 
 def perform_machine_learning(engine, produto, period=30):
     # Carregar os dados do produto específico
@@ -86,13 +87,16 @@ def perform_machine_learning(engine, produto, period=30):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    # Gerar um nome de arquivo único com timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    file_name = f'ml_plot_{timestamp}.png'
+    file_path = os.path.join(output_dir, file_name)
+
     # Salvar o gráfico no caminho permitido no Azure
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    buf_name = os.path.join(output_dir, 'ml_plot.png')
-
-    with open(buf_name, 'wb') as f:
+    with open(file_path, 'wb') as f:
         f.write(buf.getvalue())
 
     # Criar DataFrame com previsões
@@ -102,7 +106,7 @@ def perform_machine_learning(engine, produto, period=30):
     plt.close(fig)
 
     return {
-        'fig': 'ml_plot.png',
+        'fig': file_name,
         'forecast': forecast_df,
         'mae': round(mae, 2)  # Arredondar o MAE para 2 casas decimais
     }
