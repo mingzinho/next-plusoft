@@ -22,13 +22,13 @@ def perform_machine_learning(engine, produto, period=30):
 
     # Preprocessar os dados
     df['preco'] = df['preco'].str.replace('.', '').str.replace(',', '.').astype(float)
-    df['preco'] = np.round(df['preco'], 2)  # Arredondar os preços para 2 casas decimais
+    df['preco'] = np.round(df['preco'], 2)
     df['data'] = pd.to_datetime(df['data'])
     df = df[['data', 'preco']]
-    df = df.set_index('data').resample('D').mean().interpolate()  # Resample diário e interpolate para valores nulos
+    df = df.set_index('data').resample('D').mean().interpolate()
 
     # Adicionar features temporais
-    df['days'] = np.arange(len(df))  # Variável independente (número de dias)
+    df['days'] = np.arange(len(df))
     df['month'] = df.index.month
     df['day_of_week'] = df.index.dayofweek
 
@@ -36,7 +36,7 @@ def perform_machine_learning(engine, produto, period=30):
     X = df[['days', 'month', 'day_of_week']]
     y = df['preco']
 
-    # Dividir os dados em conjuntos de treino e teste (80% treino, 20% teste)
+    # Dividir os dados em conjuntos de treino e teste
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Normalizar os dados
@@ -54,9 +54,6 @@ def perform_machine_learning(engine, produto, period=30):
     # Calcular o erro médio absoluto (MAE)
     mae = mean_absolute_error(y_test, y_pred)
 
-    # Arredondar as previsões para 2 casas decimais
-    y_pred = np.round(y_pred, 2)
-
     # Fazer previsões para o futuro
     future_days = np.arange(len(df), len(df) + period)
     future_months = [(df.index[-1] + pd.Timedelta(days=i)).month for i in range(1, period + 1)]
@@ -68,8 +65,6 @@ def perform_machine_learning(engine, produto, period=30):
 
     # Fazer previsões para o período especificado
     forecast = model.predict(future_features_scaled)
-
-    # Arredondar previsões futuras para 2 casas decimais
     forecast = np.round(forecast, 2)
 
     # Plotar o resultado
@@ -93,11 +88,14 @@ def perform_machine_learning(engine, produto, period=30):
     file_path = os.path.join(output_dir, file_name)
 
     # Salvar o gráfico no caminho permitido no Azure
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)
-    with open(file_path, 'wb') as f:
-        f.write(buf.getvalue())
+    try:
+        buf = io.BytesIO()
+        plt.savefig(buf, format='png')
+        buf.seek(0)
+        with open(file_path, 'wb') as f:
+            f.write(buf.getvalue())
+    except Exception as e:
+        raise Exception(f"Erro ao salvar a imagem: {e}")
 
     # Criar DataFrame com previsões
     forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': forecast})
@@ -108,5 +106,5 @@ def perform_machine_learning(engine, produto, period=30):
     return {
         'fig': file_name,
         'forecast': forecast_df,
-        'mae': round(mae, 2)  # Arredondar o MAE para 2 casas decimais
+        'mae': round(mae, 2)
     }
