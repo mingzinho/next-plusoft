@@ -26,6 +26,8 @@
 
     {% if resultados.fig %}
         <img src="{{ url_for('static', filename=resultados.fig) }}" alt="Previsão de Preços">
+        <img src="{{ fig }}" alt="Previsão de Preços">
+
     {% endif %}
 
     {% if resultados.forecast is not none %}

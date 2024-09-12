@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file, flash, json
+from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file, flash, json, send_from_directory
 from sqlalchemy import create_engine, inspect, text
 import pandas as pd
 from datetime import datetime
@@ -408,6 +408,10 @@ def api_data():
     data_html = df.to_html(classes='table table-striped', header="true", index=False)
 
     return render_template('api_data.html', data_html=data_html)
+
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory('/home/site/wwwroot/static/', filename)
 
 
 if __name__ == '__main__':
