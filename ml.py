@@ -1,10 +1,10 @@
-from sklearn.ensemble import RandomForestRegressor  # Alterar o modelo para RandomForest
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import io
-import os  # Importar para manipulação de diretórios
+import os
 import pandas as pd
 import numpy as np
 
@@ -97,6 +97,9 @@ def perform_machine_learning(engine, produto, period=30):
 
     # Criar DataFrame com previsões
     forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': forecast})
+
+    # Fechar a figura para liberar recursos
+    plt.close(fig)
 
     return {
         'fig': 'ml_plot.png',
