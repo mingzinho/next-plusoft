@@ -117,11 +117,11 @@ def download_table(table_name):
     df.to_excel(output_file, index=False, engine='openpyxl')
     return send_file(output_file, as_attachment=True)
 
-
+@app.route('/upload/<string:table_name>', methods=['POST'])
 def upload_dados(table_name):
     file = request.files.get('file')
     
-    if table_name.lower() == 'usuarios': 
+    if table_name.lower() == 'usuarios':
         return jsonify({'status': 'error', 'message': 'Você não tem permissão para acessar esta tabela.'})
     
     confirm = request.form.get('confirm', 'false').lower() == 'true'
@@ -133,7 +133,6 @@ def upload_dados(table_name):
             if 'csv' in file_type:
                 df = pd.read_csv(file)
             elif 'excel' in file_type or 'spreadsheetml' in file_type or file.filename.endswith('.xlsx'):
-                # Lidar com arquivos Excel (formato .xlsx)
                 df = pd.read_excel(file, engine='openpyxl')  # engine='openpyxl' para suportar xlsx
             else:
                 return jsonify({'status': 'error', 'message': 'Tipo de arquivo não suportado. Apenas arquivos CSV e Excel são permitidos.'})
@@ -145,16 +144,15 @@ def upload_dados(table_name):
                 expected_columns.remove('id')
 
             # Normalizar as colunas do arquivo e as esperadas para evitar problemas de case-sensitive
-            file_columns = [col.lower() for col in df.columns]  # Converter colunas do arquivo para minúsculas
-            expected_columns = [col.lower() for col in expected_columns]  # Converter colunas esperadas para minúsculas
+            file_columns = [col.lower() for col in df.columns]
+            expected_columns = [col.lower() for col in expected_columns]
 
             # Comparar colunas esperadas (sem 'id') com as do arquivo
             if sorted(file_columns) != sorted(expected_columns):
                 return jsonify({'status': 'error', 'message': f'As colunas do arquivo ({file_columns}) não correspondem às colunas esperadas na tabela ({expected_columns}). Verifique e tente novamente.'})
 
-            if df.isnull().values.any():
-                if not confirm:
-                    return jsonify({'status': 'warning', 'message': 'O arquivo contém campos não preenchidos. Deseja continuar com o upload?'})
+            if df.isnull().values.any() and not confirm:
+                return jsonify({'status': 'warning', 'message': 'O arquivo contém campos não preenchidos. Deseja continuar com o upload?'})
             
             # Verificação e correção do formato da coluna de data
             date_columns = [col for col in expected_columns if 'data' in col]
@@ -174,7 +172,11 @@ def upload_dados(table_name):
             # Inserir dados no banco de dados
             df.to_sql(table_name, con=engine, if_exists='append', index=False)
 
-            return jsonify({'status': 'success', 'message': 'Dados carregados com sucesso.'})
+            # Recuperar os dados atualizados da tabela para exibição
+            updated_df = pd.read_sql(f'SELECT * FROM {table_name}', con=engine)
+            updated_html = updated_df.to_html(classes='data', header=True, index=False)
+
+            return jsonify({'status': 'success', 'message': 'Dados carregados com sucesso.', 'html': updated_html})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)})
     
@@ -202,18 +204,25 @@ def consumir_api_amazon():
                 "is_prime": "false"
             }
             headers = {
-                "x-rapidapi-key": "senhaapi",
+                "x-rapidapi-key": "f8ab92d4f4msh7cd359334023e09p1e2f2djsnca168ff28f37",  # Substitua por sua chave
                 "x-rapidapi-host": "real-time-amazon-data.p.rapidapi.com"
             }
             response = requests.get(url, headers=headers, params=querystring)
             
             # Verificar o status da resposta
-            if response.status_code != 200:
+            status_code = response.status_code
+            response_text = response.text
+            print(f"Status Code: {status_code}")  # Debug
+            print(f"Response Text: {response_text}")  # Debug
+
+            if status_code != 200:
                 flash('Erro ao buscar dados da API da Amazon.', 'error')
                 return redirect(url_for('consumir_api_amazon'))
 
             # Capturar a resposta completa da API
             data = response.json()
+            print(f"Response JSON: {data}")  # Debug
+
             if 'data' not in data or 'products' not in data['data']:
                 flash('Nenhum dado de produto encontrado na resposta da API.', 'warning')
                 return redirect(url_for('consumir_api_amazon'))
@@ -241,14 +250,14 @@ def consumir_api_amazon():
                 df[col] = df[col].fillna('')  # Preencher valores nulos com string vazia
 
             # Tratar colunas adicionais, se existentes
-            df['product_star_rating'] = pd.to_numeric(df['product_star_rating'], errors='coerce')
-            df['product_num_ratings'] = pd.to_numeric(df['product_num_ratings'], errors='coerce')
-            df['product_num_offers'] = pd.to_numeric(df['product_num_offers'], errors='coerce')
-            df['is_best_seller'] = df['is_best_seller'].astype(bool)
-            df['is_amazon_choice'] = df['is_amazon_choice'].astype(bool)
-            df['is_prime'] = df['is_prime'].astype(bool)
-            df['climate_pledge_friendly'] = df['climate_pledge_friendly'].astype(bool)
-            df['has_variations'] = df['has_variations'].astype(bool)
+            df['product_star_rating'] = pd.to_numeric(df.get('product_star_rating', pd.Series()), errors='coerce')
+            df['product_num_ratings'] = pd.to_numeric(df.get('product_num_ratings', pd.Series()), errors='coerce')
+            df['product_num_offers'] = pd.to_numeric(df.get('product_num_offers', pd.Series()), errors='coerce')
+            df['is_best_seller'] = df.get('is_best_seller', pd.Series()).astype(bool, errors='ignore')
+            df['is_amazon_choice'] = df.get('is_amazon_choice', pd.Series()).astype(bool, errors='ignore')
+            df['is_prime'] = df.get('is_prime', pd.Series()).astype(bool, errors='ignore')
+            df['climate_pledge_friendly'] = df.get('climate_pledge_friendly', pd.Series()).astype(bool, errors='ignore')
+            df['has_variations'] = df.get('has_variations', pd.Series()).astype(bool, errors='ignore')
 
             # Remover as colunas 'data' e 'parameters'
             if 'data' in df.columns:
@@ -267,6 +276,7 @@ def consumir_api_amazon():
             return redirect(url_for('consumir_api_amazon'))
 
     return render_template('consumir_api_amazon.html')
+
 
 # Rota para visualizar os dados da tabela ProdutosConsumidosAPI
 @app.route('/produtos_consumidos_api')

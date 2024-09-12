@@ -4,6 +4,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import io
+import os  # Importar para manipulação de diretórios
 import pandas as pd
 import numpy as np
 
@@ -80,11 +81,16 @@ def perform_machine_learning(engine, produto, period=30):
     plt.ylabel('Preço')
     plt.legend()
 
-    # Salvar o gráfico
+    # Criar o diretório, se não existir
+    output_dir = '/home/site/wwwroot/static/'
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Salvar o gráfico no caminho permitido no Azure
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    buf_name = 'static/ml_plot.png'
+    buf_name = os.path.join(output_dir, 'ml_plot.png')
 
     with open(buf_name, 'wb') as f:
         f.write(buf.getvalue())
