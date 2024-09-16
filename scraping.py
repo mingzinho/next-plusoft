@@ -51,7 +51,7 @@ def scrape_mercadolivre(url):
         price = product.find('span', {'class': 'andes-money-amount__fraction'}).text if product.find('span', {'class': 'andes-money-amount__fraction'}) else 'N/A'
         empresa = product.find('p', {'class': 'ui-search-item__group__element'})
         origem = product.find('span', {'class': 'ui-search-item__shipping'})
-        avaliacao = product.find('span', {'class': 'ui-review-rating__rating'})
+        avaliacao = product.find('span', {'class': 'ui-search-reviews__rating-number'})
 
         data.append([
             name,
