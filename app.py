@@ -387,6 +387,19 @@ def ml():
                            products=produtos,
                            selected_product=None)
 
+
+@app.route('/show_image')
+def show_image():
+    product = request.args.get('product')
+    period = int(request.args.get('period', 30))
+
+    # Chamando a função que realiza a previsão
+    resultados = perform_machine_learning(engine, product, period)
+
+    # Retorna a imagem diretamente do buffer
+    return send_file(resultados['image_buffer'], mimetype='image/png')
+
+
 @app.route('/api_data', methods=['GET'])
 def api_data():
     url = "https://real-time-amazon-data.p.rapidapi.com/products-by-category"

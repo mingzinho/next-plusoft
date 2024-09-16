@@ -1,12 +1,12 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
+    font-family: 'Arial', sans-serif;
+    background-color: #e5f7e9; /* Fundo suave com verde claro */
     margin: 0;
     padding: 0;
 }
 
 nav {
-    background-color: #333;
+    background-color: #28a745; /* Verde ecológico */
     padding: 1em;
 }
 
@@ -18,30 +18,55 @@ nav a {
 
 .container {
     padding: 2em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80vh;
+    background-color: #f4f4f4;
 }
 
 h2 {
-    color: #333;
+    color: #2b8c46; /* Verde mais forte para títulos */
 }
 
-.error {
-    color: red;
+.table-responsive {
+    margin-top: 20px;
+}
+
+table.eco-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #ffffff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+table.eco-table th, table.eco-table td {
+    border: 1px solid #ddd;
+    padding: 12px;
+}
+
+thead.thead-eco th {
+    background-color: #2b8c46; /* Verde para o cabeçalho */
+    color: #fff;
+    text-align: center;
+    font-weight: bold;
+}
+
+table.eco-table td {
+    color: #333;
 }
 
 .success {
     color: green;
 }
 
-table.data {
-    width: 100%;
-    border-collapse: collapse;
+.text-center img {
+    max-width: 100%;
+    height: auto;
+    margin: 20px auto;
 }
 
-table.data th, table.data td {
-    border: 1px solid #ddd;
-    padding: 8px;
-}
-
-table.data th {
-    background-color: #f2f2f2;
+.text-warning {
+    color: #dc3545;
+    font-size: 1.2em;
 }

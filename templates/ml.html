@@ -2,37 +2,45 @@
 {% block content %}
 <h2>Machine Learning</h2>
 
-{% if error %}
-    <p style="color:red;">{{ error }}</p>
-{% endif %}
+<div class="form-group">
+    {% if error %}
+        <p class="text-danger">{{ error }}</p>
+    {% endif %}
 
-<form method="post">
-    <label for="product">Selecione o produto:</label>
-    <select name="product" id="product">
-        {% for product in products %}
-            <option value="{{ product }}" {% if product == selected_product %}selected{% endif %}>{{ product }}</option>
-        {% endfor %}
-    </select>
-    
-    <label for="period">Selecione o período de previsão (dias):</label>
-    <input type="number" name="period" value="{{ selected_period or 30 }}" min="1">
-    <button type="submit">Fazer Previsão</button>
-</form>
+    <form method="post" class="form-inline">
+        <div class="form-group mr-2">
+            <label for="product" class="mr-2">Selecione o produto:</label>
+            <select name="product" id="product" class="form-control">
+                {% for product in products %}
+                    <option value="{{ product }}" {% if product == selected_product %}selected{% endif %}>{{ product }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group mr-2">
+            <label for="period" class="mr-2">Selecione o período de previsão (dias):</label>
+            <input type="number" name="period" value="{{ selected_period or 30 }}" min="1" class="form-control">
+        </div>
+
+        <button type="submit" class="btn btn-success">Fazer Previsão</button>
+    </form>
+</div>
 
 {% if resultados is defined %}
     {% if resultados.mae %}
-        <p>Erro Médio Absoluto (MAE) do modelo: {{ resultados.mae | round(2) }}</p>
+        <p><strong>Erro Médio Absoluto (MAE) do modelo:</strong> {{ resultados.mae | round(2) }}</p>
     {% endif %}
 
     {% if resultados.fig %}
-        <img src="{{ url_for('static', filename=resultados.fig) }}" alt="Previsão de Preços">
-        <img src="{{ fig }}" alt="Previsão de Preços">
+        <div class="text-center my-3">
+            <img src="{{ url_for('show_image', product=selected_product, period=selected_period) }}" alt="Gráfico de Previsão de Preços" class="img-fluid shadow-lg">
 
+        </div>
     {% endif %}
 
     {% if resultados.forecast is not none %}
         <h3>Previsões</h3>
-        <table>
+        <table class="table table-striped table-bordered">
             <thead>
                 <tr>
                     <th>Data</th>
@@ -50,6 +58,6 @@
         </table>
     {% endif %}
 {% else %}
-    <p>Nenhum resultado disponível.</p>
+    <p class="text-warning">Nenhum resultado disponível.</p>
 {% endif %}
 {% endblock %}

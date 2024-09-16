@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+
 def perform_machine_learning(engine, produto, period=30):
     # Carregar os dados do produto específico
     query = f"SELECT * FROM ProdutosSustentaveis WHERE produto = '{produto}'"
@@ -61,8 +62,11 @@ def perform_machine_learning(engine, produto, period=30):
     future_dow = [(df.index[-1] + pd.Timedelta(days=i)).dayofweek for i in range(1, period + 1)]
     future_features = np.column_stack((future_days, future_months, future_dow))
 
+    # Transformar future_features em DataFrame para manter os nomes das colunas
+    future_features_df = pd.DataFrame(future_features, columns=['days', 'month', 'day_of_week'])
+
     # Escalar os dados futuros
-    future_features_scaled = scaler.transform(future_features)
+    future_features_scaled = scaler.transform(future_features_df)
 
     # Fazer previsões para o período especificado
     forecast = model.predict(future_features_scaled)
