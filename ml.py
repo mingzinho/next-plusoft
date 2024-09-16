@@ -80,8 +80,8 @@ def perform_machine_learning(engine, produto, period=30):
     plt.ylabel('Preço')
     plt.legend()
 
-    # Criar o diretório, se não existir (usando o diretório permitido pelo Azure)
-    output_dir = '/home/static/'
+    # Criar o diretório temporário para salvar a imagem
+    output_dir = '/tmp/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
