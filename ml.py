@@ -2,12 +2,15 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
+import matplotlib
+matplotlib.use('Agg')  # Uso do backend 'Agg' para ambientes sem interface gráfica
 import matplotlib.pyplot as plt
 import io
 import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
+# from azure.storage.blob import BlobServiceClient  # Descomentar se for usar o Azure Blob Storage
 
 def perform_machine_learning(engine, produto, period=30):
     # Carregar os dados do produto específico
@@ -77,8 +80,8 @@ def perform_machine_learning(engine, produto, period=30):
     plt.ylabel('Preço')
     plt.legend()
 
-    # Criar o diretório, se não existir
-    output_dir = '/home/site/wwwroot/static/'
+    # Criar o diretório, se não existir (usando o diretório permitido pelo Azure)
+    output_dir = '/home/static/'
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
@@ -108,3 +111,18 @@ def perform_machine_learning(engine, produto, period=30):
         'forecast': forecast_df,
         'mae': round(mae, 2)
     }
+
+# Função para upload no Azure Blob Storage (opcional, descomentar se for usar)
+"""
+def upload_to_blob(file_path, blob_name):
+    # Conectar ao serviço de Blob Storage
+    blob_service_client = BlobServiceClient.from_connection_string('AZURE_STORAGE_CONNECTION_STRING')
+    container_client = blob_service_client.get_container_client('meu-container')
+
+    # Fazer upload do arquivo
+    with open(file_path, "rb") as data:
+        container_client.upload_blob(name=blob_name, data=data, overwrite=True)
+
+# Exemplo de uso
+# upload_to_blob(file_path, file_name)
+"""
