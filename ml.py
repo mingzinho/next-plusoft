@@ -6,11 +6,9 @@ import matplotlib
 matplotlib.use('Agg')  # Uso do backend 'Agg' para ambientes sem interface gráfica
 import matplotlib.pyplot as plt
 import io
-import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
-# from azure.storage.blob import BlobServiceClient  # Descomentar se for usar o Azure Blob Storage
 
 def perform_machine_learning(engine, produto, period=30):
     # Carregar os dados do produto específico
@@ -80,49 +78,20 @@ def perform_machine_learning(engine, produto, period=30):
     plt.ylabel('Preço')
     plt.legend()
 
-    # Criar o diretório temporário para salvar a imagem
-    output_dir = '/tmp/'
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Gerar um nome de arquivo único com timestamp
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    file_name = f'ml_plot_{timestamp}.png'
-    file_path = os.path.join(output_dir, file_name)
-
-    # Salvar o gráfico no caminho permitido no Azure
-    try:
-        buf = io.BytesIO()
-        plt.savefig(buf, format='png')
-        buf.seek(0)
-        with open(file_path, 'wb') as f:
-            f.write(buf.getvalue())
-    except Exception as e:
-        raise Exception(f"Erro ao salvar a imagem: {e}")
-
-    # Criar DataFrame com previsões
-    forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': forecast})
+    # Salvar o gráfico no buffer de memória (em vez de arquivo)
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)  # Resetar o ponteiro do buffer para o início
 
     # Fechar a figura para liberar recursos
     plt.close(fig)
 
+    # Criar DataFrame com previsões
+    forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': forecast})
+
+    # Retornar o buffer contendo a imagem e outras informações
     return {
-        'fig': file_name,
+        'image_buffer': buf,  # Buffer contendo a imagem gerada
         'forecast': forecast_df,
         'mae': round(mae, 2)
     }
-
-# Função para upload no Azure Blob Storage (opcional, descomentar se for usar)
-"""
-def upload_to_blob(file_path, blob_name):
-    # Conectar ao serviço de Blob Storage
-    blob_service_client = BlobServiceClient.from_connection_string('AZURE_STORAGE_CONNECTION_STRING')
-    container_client = blob_service_client.get_container_client('meu-container')
-
-    # Fazer upload do arquivo
-    with open(file_path, "rb") as data:
-        container_client.upload_blob(name=blob_name, data=data, overwrite=True)
-
-# Exemplo de uso
-# upload_to_blob(file_path, file_name)
-"""
