@@ -5,26 +5,6 @@ body {
     padding: 0;
 }
 
-nav {
-    background-color: #28a745; /* Verde ecológico */
-    padding: 1em;
-}
-
-nav a {
-    color: #fff;
-    margin-right: 1em;
-    text-decoration: none;
-}
-
-.container {
-    padding: 2em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 80vh;
-    background-color: #f4f4f4;
-}
-
 h2 {
     color: #2b8c46; /* Verde mais forte para títulos */
 }
@@ -56,17 +36,10 @@ table.eco-table td {
     color: #333;
 }
 
-.success {
-    color: green;
+.text-center {
+    text-align: center;
 }
 
-.text-center img {
-    max-width: 100%;
-    height: auto;
-    margin: 20px auto;
-}
-
-.text-warning {
-    color: #dc3545;
-    font-size: 1.2em;
+.form-group {
+    margin-bottom: 1.5rem;
 }

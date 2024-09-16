@@ -3,7 +3,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib
-matplotlib.use('Agg')  # Uso do backend 'Agg' para ambientes sem interface gráfica
 import matplotlib.pyplot as plt
 import io
 import pandas as pd
@@ -11,6 +10,7 @@ import numpy as np
 from datetime import datetime
 
 
+matplotlib.use('Agg')  # Uso do backend 'Agg' para ambientes sem interface gráfica
 def perform_machine_learning(engine, produto, period=30):
     # Carregar os dados do produto específico
     query = f"SELECT * FROM ProdutosSustentaveis WHERE produto = '{produto}'"

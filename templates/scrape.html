@@ -1,34 +1,42 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Web Scraping - MercadoLivre</h2>
-<form method="POST">
-    <label for="platform">Escolha a plataforma:</label>
-    <select name="platform" id="platform" required>
-        <option value="mercadolivre">Mercado Livre</option>
-        <option value="amazon">Amazon</option>
-    </select>
+<h2 class="text-center">Web Scraping</h2>
+<div class="form-group mt-4">
+    <form method="POST" class="form-inline justify-content-center">
+        <div class="form-group mr-3">
+            <label for="platform" class="mr-2">Escolha a plataforma:</label>
+            <select name="platform" id="platform" class="form-control" required>
+                <option value="mercadolivre">Mercado Livre</option>
+                <option value="amazon">Amazon</option>
+            </select>
+        </div>
 
-    <label for="url">URL:</label>
-    <input type="text" name="url" id="url" required>
+        <div class="form-group mr-3">
+            <label for="url" class="mr-2">URL:</label>
+            <input type="text" name="url" id="url" class="form-control" required>
+        </div>
 
-    <button type="submit">Iniciar Scraping</button>
-</form>
-
-
+        <button type="submit" class="btn btn-success">Iniciar Scraping</button>
+    </form>
+</div>
 
 {% if success %}
-    <p class="success">{{ success }}</p>
+    <p class="success text-center mt-4">{{ success }}</p>
     {% if data_html %}
-        <h3>Dados Raspados</h3>
-        <div>{{ data_html | safe }}</div>
-        <a href="{{ excel_link }}" download>Baixar Dados (Excel)</a>
-        <a href="{{ csv_link }}" download>Baixar Dados (CSV)</a>
+        <h3 class="text-center mt-5">Dados Raspados</h3>
+        <div class="table-responsive mt-3">
+            <div>{{ data_html | safe }}</div>
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ excel_link }}" download class="btn btn-success">Baixar Dados (Excel)</a>
+            <a href="{{ csv_link }}" download class="btn btn-primary ml-2">Baixar Dados (CSV)</a>
+        </div>
     {% endif %}
 {% endif %}
 
 {% if error %}
-    <p class="error">{{ error }}</p>
+    <p class="text-warning text-center mt-4">{{ error }}</p>
 {% endif %}
 
 {% endblock %}

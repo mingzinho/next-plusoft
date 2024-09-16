@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import requests
+import io
 from scraping import scrape_amazon, scrape_mercadolivre
 from ml import perform_machine_learning
 
@@ -388,16 +389,6 @@ def ml():
                            selected_product=None)
 
 
-@app.route('/show_image')
-def show_image():
-    product = request.args.get('product')
-    period = int(request.args.get('period', 30))
-
-    # Chamando a função que realiza a previsão
-    resultados = perform_machine_learning(engine, product, period)
-
-    # Retorna a imagem diretamente do buffer
-    return send_file(resultados['image_buffer'], mimetype='image/png')
 
 
 @app.route('/api_data', methods=['GET'])
@@ -425,6 +416,19 @@ def api_data():
 @app.route('/static/<path:filename>')
 def static_files(filename):
     return send_from_directory('/home/site/wwwroot/static/', filename)
+
+@app.route('/show_image/<product>/<int:period>')
+def show_image(product, period):
+    # Chamar a função que gera o gráfico
+    result = perform_machine_learning(engine, produto=product, period=period)
+    
+    # Retornar a imagem a partir do buffer gerado
+    return send_file(
+        io.BytesIO(result['image_buffer'].getvalue()),  # Buffer da imagem
+        mimetype='image/png',  # Tipo de conteúdo da resposta HTTP
+        as_attachment=False,  # Não baixar automaticamente o arquivo
+        attachment_filename=f'{product}_previsao.png'  # Nome sugerido da imagem
+    )
 
 
 if __name__ == '__main__':
