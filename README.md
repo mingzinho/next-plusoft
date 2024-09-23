@@ -2,6 +2,8 @@
 ![Status](https://img.shields.io/badge/STATUS-EM%20DESENVOLVIMENTO-yellow?style=for-the-badge)
 
 > Aplicação de Inteligência Artificial e Análise de Dados para otimizar o mercado de produtos sustentáveis.
+>
+> ** Professor, note que é o projeto que estamos utlizando para o NEXT, então pode sofrer alterações. **
 
 ## 📌 Descrição do Projeto
 
