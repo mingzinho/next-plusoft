@@ -1,5 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, request, jsonify, session, send_file, flash, json, send_from_directory
 from sqlalchemy import create_engine, inspect, text
+from math import ceil
 import pandas as pd
 from datetime import datetime
 import os
@@ -89,17 +90,68 @@ def view_table(table_name):
     user_email = session['user_email']
     if not is_user_authenticated(user_email):
         return redirect(url_for('unauthorized'))
-    
+
     if request.method == 'POST':
         # Lógica para upload de dados
         return upload_dados(table_name)
-    
+
     # Obter dados da tabela
     query = f'SELECT * FROM {table_name}'
     df = pd.read_sql_query(query, engine)
+
+    # Remover colunas desnecessárias
     df.drop(columns=['data_criacao', 'ultima_atualizacao'], inplace=True, errors='ignore')
-    data_html = df.to_html(classes='data', header="true", index=False)
-    return render_template('table.html', table_name=table_name, data_html=data_html, columns=get_columns(table_name))
+
+    # Total de linhas
+    total_rows = len(df)
+
+    # Filtro de busca
+    search_query = request.args.get('search', '')  # Obtenha o termo de busca do usuário
+    if search_query:
+        df = df[df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
+
+    # Ordenação
+    sort_column = request.args.get('sort', df.columns[0])  # Coluna padrão para ordenar
+    sort_order = request.args.get('order', 'asc')  # Ordem de classificação (asc ou desc)
+    if sort_order == 'asc':
+        df = df.sort_values(by=[sort_column], ascending=True)
+    else:
+        df = df.sort_values(by=[sort_column], ascending=False)
+
+    # Configuração da paginação
+    page = request.args.get('page', 1, type=int)  # Página atual (valor padrão é 1)
+    per_page = 10  # Número de itens por página
+    total_items = len(df)
+    total_pages = ceil(total_items / per_page)
+
+    # Calcular páginas para exibir
+    start_page = max(1, page - 2)
+    end_page = min(total_pages, page + 2)
+
+    # Fatiando os dados do DataFrame para obter os itens da página atual
+    start = (page - 1) * per_page
+    end = start + per_page
+    items_paginados = df.iloc[start:end]
+
+    # Criar dicionário com os dados a serem passados para o template
+    dados = {col: items_paginados[col].tolist() for col in items_paginados.columns}
+
+    return render_template(
+        'table.html',
+        table_name=table_name,
+        dados=dados,  # Passando os dados em formato de colunas
+        columns=items_paginados.columns.tolist(),  # Passando os nomes das colunas
+        page=page,
+        zip=zip,
+        total_pages=total_pages,
+        start_page=start_page,
+        end_page=end_page,
+        total_rows=total_rows,  # Total de linhas
+        search_query=search_query,  # Query de busca
+        sort_column=sort_column,  # Coluna para ordenar
+        sort_order=sort_order  # Ordem de classificação
+    )
+
 
 # Rota para download de dados em Excel
 @app.route('/download/<table_name>')
@@ -177,6 +229,9 @@ def upload_dados(table_name):
             updated_df = pd.read_sql(f'SELECT * FROM {table_name}', con=engine)
             updated_html = updated_df.to_html(classes='data', header=True, index=False)
 
+            
+
+
             return jsonify({'status': 'success', 'message': 'Dados carregados com sucesso.', 'html': updated_html})
         except Exception as e:
             return jsonify({'status': 'error', 'message': str(e)})
@@ -209,20 +264,14 @@ def consumir_api_amazon():
                 "x-rapidapi-host": "real-time-amazon-data.p.rapidapi.com"
             }
             response = requests.get(url, headers=headers, params=querystring)
-            
-            # Verificar o status da resposta
-            status_code = response.status_code
-            response_text = response.text
-            print(f"Status Code: {status_code}")  # Debug
-            print(f"Response Text: {response_text}")  # Debug
 
-            if status_code != 200:
+            # Verificar o status da resposta
+            if response.status_code != 200:
                 flash('Erro ao buscar dados da API da Amazon.', 'error')
                 return redirect(url_for('consumir_api_amazon'))
 
-            # Capturar a resposta completa da API
+            # Capturar a resposta da API
             data = response.json()
-            print(f"Response JSON: {data}")  # Debug
 
             if 'data' not in data or 'products' not in data['data']:
                 flash('Nenhum dado de produto encontrado na resposta da API.', 'warning')
@@ -237,37 +286,29 @@ def consumir_api_amazon():
             # Converter os produtos para DataFrame
             df = pd.DataFrame(products)
 
+            # Filtrar apenas as colunas desejadas
+            colunas_desejadas = [
+                'asin', 'product_price', 'product_title', 'product_original_price', 
+                'product_star_rating', 'product_num_ratings', 'product_num_offers',
+                'product_minimum_offer_price', 'is_best_seller', 'is_amazon_choice', 
+                'is_prime', 'climate_pledge_friendly', 'sales_volume', 'delivery',
+                'has_variations', 'product_availability'
+            ]
+
+            # Garantir que as colunas existam no DataFrame e filtrá-las
+            df_filtrado = df[colunas_desejadas].copy()
+
             # Adicionar colunas obrigatórias e preencher valores faltantes
-            df['status'] = 'OK'
-            df['request_id'] = 'unique_request_id'  # Substitua por um valor único gerado ou apropriado
-            df['data_criacao'] = datetime.now()
-            df['ultima_atualizacao'] = datetime.now()
+            df_filtrado['status'] = 'OK'
+            df_filtrado['request_id'] = 'unique_request_id'  # Substitua por um valor único gerado ou apropriado
+            df_filtrado['data_criacao'] = datetime.now()
+            df_filtrado['ultima_atualizacao'] = datetime.now()
 
-            # Garantir que não haja valores nulos nas colunas obrigatórias
-            required_columns = ['asin', 'product_title', 'product_url']
-            for col in required_columns:
-                if col not in df.columns:
-                    df[col] = ''
-                df[col] = df[col].fillna('')  # Preencher valores nulos com string vazia
+            # Preencher valores nulos nas colunas obrigatórias
+            df_filtrado = df_filtrado.fillna('')
 
-            # Tratar colunas adicionais, se existentes
-            df['product_star_rating'] = pd.to_numeric(df.get('product_star_rating', pd.Series()), errors='coerce')
-            df['product_num_ratings'] = pd.to_numeric(df.get('product_num_ratings', pd.Series()), errors='coerce')
-            df['product_num_offers'] = pd.to_numeric(df.get('product_num_offers', pd.Series()), errors='coerce')
-            df['is_best_seller'] = df.get('is_best_seller', pd.Series()).astype(bool, errors='ignore')
-            df['is_amazon_choice'] = df.get('is_amazon_choice', pd.Series()).astype(bool, errors='ignore')
-            df['is_prime'] = df.get('is_prime', pd.Series()).astype(bool, errors='ignore')
-            df['climate_pledge_friendly'] = df.get('climate_pledge_friendly', pd.Series()).astype(bool, errors='ignore')
-            df['has_variations'] = df.get('has_variations', pd.Series()).astype(bool, errors='ignore')
-
-            # Remover as colunas 'data' e 'parameters'
-            if 'data' in df.columns:
-                df = df.drop(columns=['data'])
-            if 'parameters' in df.columns:
-                df = df.drop(columns=['parameters'])
-
-            # Inserir dados no banco de dados usando pd.to_sql
-            df.to_sql('ProdutosConsumidosAPI', con=engine, if_exists='append', index=False)
+            # Inserir dados no banco de dados
+            df_filtrado.to_sql('ProdutosConsumidosAPI', con=engine, if_exists='append', index=False)
 
             flash('Dados da API da Amazon inseridos com sucesso!', 'success')
             return redirect(url_for('consumir_api_amazon'))
@@ -292,14 +333,74 @@ def view_produtos_consumidos_api():
     # Obter dados da tabela ProdutosConsumidosAPI
     query = 'SELECT * FROM ProdutosConsumidosAPI'
     df = pd.read_sql_query(query, engine)
-    
+
     # Remover colunas desnecessárias
     df.drop(columns=['data_criacao', 'ultima_atualizacao'], inplace=True, errors='ignore')
-    
-    # Gerar HTML dos dados
-    data_html = df.to_html(classes='data', header="true", index=False)
 
-    return render_template('produtos_consumidos_api.html', data_html=data_html)
+    # Total de linhas
+    total_rows = len(df)
+
+    # Filtro de busca
+    search_query = request.args.get('search', '')  # Obtenha o termo de busca do usuário
+    if search_query:
+        df = df[df.apply(lambda row: row.astype(str).str.contains(search_query, case=False).any(), axis=1)]
+
+    # Ordenação
+    sort_column = request.args.get('sort', 'id')  # Coluna padrão para ordenar
+    sort_order = request.args.get('order', 'desc')  # Ordem de classificação (asc ou desc)
+    if sort_order == 'asc':
+        df = df.sort_values(by=[sort_column], ascending=True)
+    else:
+        df = df.sort_values(by=[sort_column], ascending=False)
+
+    # Configuração da paginação
+    page = request.args.get('page', 1, type=int)  # Página atual (valor padrão é 1)
+    per_page = 10  # Número de itens por página
+    total_produtos = len(df)
+    total_pages = ceil(total_produtos / per_page)
+
+    # Calcular páginas para exibir
+    start_page = max(1, page - 2)
+    end_page = min(total_pages, page + 2)
+
+    # Fatiando os dados do DataFrame para obter os itens da página atual
+    start = (page - 1) * per_page
+    end = start + per_page
+    produtos_paginados = df[start:end]
+
+    # Criar dicionário com as colunas solicitadas
+    dados = {
+        'asin': produtos_paginados['asin'].tolist(),
+        'product_price': produtos_paginados['product_price'].tolist(),
+        'product_title': produtos_paginados['product_title'].tolist(),
+        'product_original_price': produtos_paginados['product_original_price'].tolist(),
+        'product_star_rating': produtos_paginados['product_star_rating'].tolist(),
+        'product_num_ratings': produtos_paginados['product_num_ratings'].tolist(),
+        'product_num_offers': produtos_paginados['product_num_offers'].tolist(),
+        'product_minimum_offer_price': produtos_paginados['product_minimum_offer_price'].tolist(),
+        'is_best_seller': produtos_paginados['is_best_seller'].tolist(),
+        'is_amazon_choice': produtos_paginados['is_amazon_choice'].tolist(),
+        'is_prime': produtos_paginados['is_prime'].tolist(),
+        'climate_pledge_friendly': produtos_paginados['climate_pledge_friendly'].tolist(),
+        'sales_volume': produtos_paginados['sales_volume'].tolist(),
+        'delivery': produtos_paginados['delivery'].tolist(),
+        'has_variations': produtos_paginados['has_variations'].tolist(),
+        'product_availability': produtos_paginados['product_availability'].tolist()
+    }
+
+    return render_template(
+        'produtos_consumidos_api.html',
+        dados=dados,  # Passando os dados em formato de colunas
+        page=page,
+        zip=zip,
+        total_pages=total_pages,
+        start_page=start_page,
+        end_page=end_page,
+        total_rows=total_rows,  # Total de linhas
+        search_query=search_query,  # Query de busca
+        sort_column=sort_column,  # Coluna para ordenar
+        sort_order=sort_order  # Ordem de classificação
+    )
 
 
 # Rota para Web Scraping
@@ -369,25 +470,27 @@ def ml():
 
     if request.method == 'POST':
         produto_selecionado = request.form.get('product')
-        periodo = int(request.form.get('period', 30))  # Período padrão de 30 dias se não fornecido
+        # Período padrão de 12 meses se não fornecido
+        periodo = int(request.form.get('period', 12))  # Agora estamos lidando com meses
 
         # Passar o produto selecionado para a função de machine learning
         resultado = perform_machine_learning(engine, produto=produto_selecionado, period=periodo)
+        
         if resultado is None:
-            resultado = {'forecast': pd.DataFrame(), 'mae': None, 'fig': None}
+            resultado = {'forecast': pd.DataFrame(), 'mae': None, 'image_path': None}
+
         return render_template('ml_result.html', 
                                resultados=resultado, 
                                selected_period=periodo,
                                products=produtos,
                                selected_product=produto_selecionado)
 
-    # Se o método for GET, exibir o formulário com produtos e período padrão
+    # Se o método for GET, exibir o formulário com produtos e período padrão de 12 meses
     return render_template('ml_result.html', 
-                           resultados={'forecast': pd.DataFrame(), 'mae': None, 'fig': None},
-                           selected_period=30,
+                           resultados={'forecast': pd.DataFrame(), 'mae': None, 'image_path': None},
+                           selected_period=12,  # Mudança aqui para refletir meses
                            products=produtos,
                            selected_product=None)
-
 
 
 
@@ -408,8 +511,12 @@ def api_data():
     # Transformar os dados em um DataFrame
     df = pd.json_normalize(data.get('products', []))  # Ajuste conforme a estrutura real do JSON
 
-    # Converter o DataFrame para HTML
-    data_html = df.to_html(classes='table table-striped', header="true", index=False)
+    # Especificar as colunas desejadas
+    colunas_desejadas = ['asin', 'product_price', 'product_title', 'product_original_price', 'product_original_price', 'product_star_rating	', 'product_num_ratings', 'product_num_offers', 'product_minimum_offer_price', 'is_best_seller', 'is_amazon_choice', 'is_prime', 'climate_pledge_friendly', 'sales_volume', 'delivery', 'has_variations']  # Substitua pelos nomes corretos das colunas que você quer
+    df_filtrado = df[colunas_desejadas]
+
+    # Converter o DataFrame filtrado para HTML
+    data_html = df_filtrado.to_html(classes='table table-striped', header="true", index=False)
 
     return render_template('api_data.html', data_html=data_html)
 

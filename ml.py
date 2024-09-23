@@ -1,17 +1,20 @@
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, TimeSeriesSplit
 from sklearn.metrics import mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 import matplotlib
 import matplotlib.pyplot as plt
-import io
 import pandas as pd
 import numpy as np
+import os
 from datetime import datetime
 
-
 matplotlib.use('Agg')  # Uso do backend 'Agg' para ambientes sem interface gráfica
-def perform_machine_learning(engine, produto, period=30):
+
+# Diretório para salvar imagens temporárias
+TEMP_IMAGE_DIR = './static/images'
+
+def perform_machine_learning(engine, produto, period=12):
     # Carregar os dados do produto específico
     query = f"SELECT * FROM ProdutosSustentaveis WHERE produto = '{produto}'"
     df = pd.read_sql_query(query, engine)
@@ -27,75 +30,85 @@ def perform_machine_learning(engine, produto, period=30):
     df['preco'] = np.round(df['preco'], 2)
     df['data'] = pd.to_datetime(df['data'])
     df = df[['data', 'preco']]
-    df = df.set_index('data').resample('D').mean().interpolate()
 
-    # Adicionar features temporais
-    df['days'] = np.arange(len(df))
+    # Resample para média mensal
+    df = df.set_index('data').resample('M').mean().interpolate()
+
+    # Adicionar variáveis "lag" e outras features temporais
+    df['preco_lag1'] = df['preco'].shift(1)
+    df['preco_lag2'] = df['preco'].shift(2)  # Preço de dois meses atrás
+    df = df.dropna()
+
+    df['year'] = df.index.year
     df['month'] = df.index.month
-    df['day_of_week'] = df.index.dayofweek
 
-    # Variáveis independentes
-    X = df[['days', 'month', 'day_of_week']]
+    X = df[['year', 'month', 'preco_lag1', 'preco_lag2']]
     y = df['preco']
 
-    # Dividir os dados em conjuntos de treino e teste
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Normalizar os dados
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    # Treinar o modelo com RandomForest
+    # Validação cruzada temporal para evitar overfitting em dados passados
+    tscv = TimeSeriesSplit(n_splits=5)
     model = RandomForestRegressor(n_estimators=100, random_state=42)
-    model.fit(X_train_scaled, y_train)
+    mae_scores = []
 
-    # Prever os preços no conjunto de teste
-    y_pred = model.predict(X_test_scaled)
+    for train_index, test_index in tscv.split(X):
+        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
+        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
 
-    # Calcular o erro médio absoluto (MAE)
-    mae = mean_absolute_error(y_test, y_pred)
+        # Normalizar os dados
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-    # Fazer previsões para o futuro
-    future_days = np.arange(len(df), len(df) + period)
-    future_months = [(df.index[-1] + pd.Timedelta(days=i)).month for i in range(1, period + 1)]
-    future_dow = [(df.index[-1] + pd.Timedelta(days=i)).dayofweek for i in range(1, period + 1)]
-    future_features = np.column_stack((future_days, future_months, future_dow))
+        model.fit(X_train_scaled, y_train)
+        y_pred = model.predict(X_test_scaled)
+        mae_scores.append(mean_absolute_error(y_test, y_pred))
 
-    # Transformar future_features em DataFrame para manter os nomes das colunas
-    future_features_df = pd.DataFrame(future_features, columns=['days', 'month', 'day_of_week'])
+    # Média dos MAEs da validação cruzada
+    mae = np.mean(mae_scores)
 
-    # Escalar os dados futuros
-    future_features_scaled = scaler.transform(future_features_df)
+    # Prever preços futuros
+    future_months = np.arange(len(df), len(df) + period)
+    future_years = [(df.index[-1] + pd.DateOffset(months=i)).year for i in range(1, period + 1)]
+    future_months_only = [(df.index[-1] + pd.DateOffset(months=i)).month for i in range(1, period + 1)]
 
-    # Fazer previsões para o período especificado
-    forecast = model.predict(future_features_scaled)
-    forecast = np.round(forecast, 2)
+    last_price_lag1 = df['preco'].iloc[-1]
+    last_price_lag2 = df['preco_lag1'].iloc[-1]
+
+    future_lagged_prices = [last_price_lag1, last_price_lag2]
+
+    # Prever os preços futuros iterativamente
+    future_prices = []
+    for i in range(period):
+        future_features = [[future_years[i], future_months_only[i], future_lagged_prices[-1], future_lagged_prices[-2]]]
+        future_features_scaled = scaler.transform(future_features)
+        pred_price = model.predict(future_features_scaled)[0]
+        future_prices.append(pred_price)
+        future_lagged_prices.append(pred_price)
 
     # Plotar o resultado
     fig, ax = plt.subplots()
     ax.plot(df.index, df['preco'], label='Histórico de Preços')
-    future_dates = pd.date_range(df.index[-1], periods=period + 1, freq='D')[1:]
-    ax.plot(future_dates, forecast, label='Previsão', linestyle='--')
-    plt.title('Previsão de Preços')
+    future_dates = pd.date_range(df.index[-1] + pd.DateOffset(months=1), periods=period, freq='M')
+    ax.plot(future_dates, future_prices, label='Previsão', linestyle='--')
+    plt.title('Previsão de Preços (Média Mensal)')
     plt.xlabel('Data')
-    plt.ylabel('Preço')
+    plt.ylabel('Preço Médio')
     plt.legend()
 
-    # Salvar o gráfico no buffer de memória (em vez de arquivo)
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png')
-    buf.seek(0)  # Resetar o ponteiro do buffer para o início
-
-    # Fechar a figura para liberar recursos
+    # Salvar o gráfico como imagem em um diretório temporário
+    if not os.path.exists(TEMP_IMAGE_DIR):
+        os.makedirs(TEMP_IMAGE_DIR)
+    
+    image_path = f'static/images/forecast_{produto}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.png'
+    plt.savefig(image_path)
     plt.close(fig)
 
     # Criar DataFrame com previsões
-    forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': forecast})
+    forecast_df = pd.DataFrame({'Data': future_dates, 'Previsão': np.round(future_prices, 2)})
 
-    # Retornar o buffer contendo a imagem e outras informações
+    # Retornar o caminho da imagem e outras informações
     return {
-        'image_buffer': buf,  # Buffer contendo a imagem gerada
+        'image_path': image_path,  # Caminho da imagem salva
         'forecast': forecast_df,
         'mae': round(mae, 2)
     }

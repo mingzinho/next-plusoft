@@ -1,11 +1,250 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Produtos Consumidos da API da Amazon</h2>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.7/css/dataTables.dataTables.css">
+<link rel="stylesheet" href="./static/css/styles.css">
 
-<!-- Exibir dados da tabela -->
-{{ data_html|safe }}
+<style>
+    table {
+        width: 100%; /* Garante que o container ocupe 100% da largura */
+        margin: 0; /* Remove margens que podem estar limitando a largura */
+        padding: 0; /* Remove padding para ocupar toda a largura */
+    }
+
+    table {
+        color: rgb(0, 0, 0);
+        width: 100%; /* Ajusta a tabela para ocupar 100% da largura */
+        border-collapse: collapse; /* Colapsa bordas para uma apresentação melhor */
+    }
+
+    thead {
+        padding: 10px 15px;
+        text-align: center;
+    }
+
+    th {
+        text-align: center;
+        font-size: 14px;
+        background-color: #f8f9fa; /* Cor de fundo para cabeçalhos */
+    }
+
+    td {
+        padding: 10px 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 150px; /* Largura máxima de 150px para células */
+        border: 1px solid #000; /* Borda para visualização */
+    }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById("search-input");
+        const tbody = document.getElementById("product-table-body");
+        
+        searchInput.addEventListener("keyup", function() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = tbody.getElementsByTagName("tr");
+
+            // Limpar a tabela antes de mostrar os resultados
+            const noResultsRow = document.querySelector("#no-results");
+            if (noResultsRow) noResultsRow.remove();
+
+            let anyVisible = false;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName("td");
+                let rowVisible = false;
+
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(filter)) {
+                        rowVisible = true;
+                        break;
+                    }
+                }
+
+                if (rowVisible) {
+                    rows[i].style.display = ""; // Mostra a linha
+                    anyVisible = true;
+                } else {
+                    rows[i].style.display = "none"; // Oculta a linha
+                }
+            }
+
+            // Exibir mensagem se não houver resultados
+            if (!anyVisible) {
+                const noResultsRow = document.createElement("tr");
+                noResultsRow.id = "no-results";
+                const noResultsCell = document.createElement("td");
+                noResultsCell.colSpan = 16; // Colspan para ocupar todas as colunas
+                noResultsCell.textContent = "Nenhum resultado encontrado.";
+                noResultsRow.appendChild(noResultsCell);
+                tbody.appendChild(noResultsRow);
+            }
+        });
+    });
+</script>
+
+
+
+
+<h3>Produtos Consumidos da API da Amazon</h3>
+
+<!-- Formulário de Busca -->
+<form method="get" action="{{ url_for('view_produtos_consumidos_api') }}">
+    <div class="input-group mb-3">
+        <input type="text" id="search-input" class="form-control" placeholder="Buscar produtos..." value="{{ search_query }}">
+    </div>
+</form>
+
+{% if dados is not none %}
+    <div class="table-responsive mt-3">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th><a href="?sort=asin&order={{ 'desc' if sort_column == 'asin' and sort_order == 'asc' else 'asc' }}">ASIN</a></th>
+                    <th>Preço</th>
+                    <th>Título</th>
+                    <th>Preço Original</th>
+                    <th>Avaliação</th>
+                    <th>Número de Avaliações</th>
+                    <th>Número de Ofertas</th>
+                    <th>Menor Preço de Oferta</th>
+                    <th>Best Seller</th>
+                    <th>Amazon Choice</th>
+                    <th>Prime</th>
+                    <th>Clima Pledge</th>
+                    <th>Volume de Vendas</th>
+                    <th>Entrega</th>
+                    <th>Possui Variações</th>
+                    <th>Disponibilidade</th>
+                </tr>
+            </thead>
+            <tbody id="product-table-body">
+                {% for asin, price, title, original_price, star_rating, num_ratings, num_offers, minimum_offer_price, best_seller, amazon_choice, prime, climate_pledge, sales_volume, delivery, has_variations, availability in zip(dados['asin'], dados['product_price'], dados['product_title'], dados['product_original_price'], dados['product_star_rating'], dados['product_num_ratings'], dados['product_num_offers'], dados['product_minimum_offer_price'], dados['is_best_seller'], dados['is_amazon_choice'], dados['is_prime'], dados['climate_pledge_friendly'], dados['sales_volume'], dados['delivery'], dados['has_variations'], dados['product_availability']) %}
+                    <tr>
+                        <td>{{ asin }}</td>
+                        <td>{{ price }}</td>
+                        <td>{{ title }}</td>
+                        <td>{{ original_price }}</td>
+                        <td>{{ star_rating }}</td>
+                        <td>{{ num_ratings }}</td>
+                        <td>{{ num_offers }}</td>
+                        <td>{{ minimum_offer_price }}</td>
+                        <td>{{ best_seller }}</td>
+                        <td>{{ amazon_choice }}</td>
+                        <td>{{ prime }}</td>
+                        <td>{{ climate_pledge }}</td>
+                        <td>{{ sales_volume }}</td>
+                        <td>{{ delivery }}</td>
+                        <td>{{ has_variations }}</td>
+                        <td>{{ availability }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const searchInput = document.getElementById("search-input");
+        const tbody = document.getElementById("product-table-body");
+        
+        searchInput.addEventListener("keyup", function() {
+            const filter = searchInput.value.toLowerCase();
+            const rows = tbody.getElementsByTagName("tr");
+
+            // Limpar a tabela antes de mostrar os resultados
+            const noResultsRow = document.querySelector("#no-results");
+            if (noResultsRow) noResultsRow.remove();
+
+            let anyVisible = false;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName("td");
+                let rowVisible = false;
+
+                for (let j = 0; j < cells.length; j++) {
+                    if (cells[j].textContent.toLowerCase().includes(filter)) {
+                        rowVisible = true;
+                        break;
+                    }
+                }
+
+                if (rowVisible) {
+                    rows[i].style.display = ""; // Mostra a linha
+                    anyVisible = true;
+                } else {
+                    rows[i].style.display = "none"; // Oculta a linha
+                }
+            }
+
+            // Exibir mensagem se não houver resultados
+            if (!anyVisible) {
+                const noResultsRow = document.createElement("tr");
+                noResultsRow.id = "no-results";
+                const noResultsCell = document.createElement("td");
+                noResultsCell.colSpan = 16; // Colspan para ocupar todas as colunas
+                noResultsCell.textContent = "Nenhum resultado encontrado.";
+                noResultsRow.appendChild(noResultsCell);
+                tbody.appendChild(noResultsRow);
+            }
+        });
+    });
+</script>
+
+
+<!-- Paginação -->
+<nav aria-label="Page navigation">
+    <ul class="pagination">
+        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page - 1 }}&search={{ search_query }}&sort={{ sort_column }}&order={{ sort_order }}" aria-label="Anterior">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+
+        {% if start_page > 1 %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1&search={{ search_query }}&sort={{ sort_column }}&order={{ sort_order }}">1</a>
+            </li>
+            {% if start_page > 2 %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+        {% endif %}
+
+        {% for p in range(start_page, end_page + 1) %}
+            <li class="page-item {% if page == p %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&search={{ search_query }}&sort={{ sort_column }}&order={{ sort_order }}">{{ p }}</a>
+            </li>
+        {% endfor %}
+
+        {% if end_page < total_pages %}
+            {% if end_page < total_pages - 1 %}
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            {% endif %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ total_pages }}&search={{ search_query }}&sort={{ sort_column }}&order={{ sort_order }}">{{ total_pages }}</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page + 1 }}&search={{ search_query }}&sort={{ sort_column }}&order={{ sort_order }}" aria-label="Próximo">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+
+<!-- Total de Linhas -->
+<p>Total de produtos encontrados: {{ total_rows }}</p>
 
 <!-- Link para voltar -->
-<a href="{{ url_for('index') }}">Voltar ao início</a>
+<a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Voltar ao início</a>
 
 {% endblock %}

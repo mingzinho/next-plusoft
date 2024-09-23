@@ -1,12 +1,24 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Login</h2>
-<form method="POST">
-    <label for="email">Email:</label>
-    <input type="email" name="email" required>
-    <button type="submit">Entrar</button>
-</form>
-{% if error %}
-<p class="error">{{ error }}</p>
-{% endif %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Login</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" class="form-control" name="email" required placeholder="Digite seu email">
+                </div>
+                <div class="form-group text-center">
+                    <button type="submit" class="btn btn-success btn-block">Entrar</button>
+                </div>
+                {% if error %}
+                <div class="alert alert-danger text-center" role="alert">
+                    {{ error }}
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
