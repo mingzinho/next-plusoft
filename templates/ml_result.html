@@ -46,14 +46,16 @@
                 <thead>
                     <tr>
                         <th>Data</th>
-                        <th>Previsão</th>
+                        <th>Previsão de Demanda</th>
+                        <th>Previsão de Preço</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for _, row in resultados.forecast.iterrows() %}
                         <tr>
                             <td>{{ row['Data'].strftime('%Y-%m-%d') }}</td>
-                            <td>{{ row['Previsão'] }}</td>
+                            <td>{{ row['Previsão de Demanda'] }}</td>
+                            <td>{{ row['Previsão de Preço'] }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

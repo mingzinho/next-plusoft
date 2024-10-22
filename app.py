@@ -10,19 +10,10 @@ from scraping import scrape_amazon, scrape_mercadolivre
 from ml import perform_machine_learning
 
 app = Flask(__name__)
-app.secret_key = 'ming123456'  # Chave secreta para sessões
+app.secret_key = os.getenv('SECRET_KEY', 'default_secret_key')
 
-# Configuração do banco de dados
-connection_string = (
-    'Driver={ODBC Driver 18 for SQL Server};'
-    'Server=tcp:bancoming.database.windows.net,1433;'
-    'Database=bancoplusoft;'
-    'Uid=mingplusoft;'
-    'Pwd=Ming@123;'
-    'Encrypt=yes;'
-    'TrustServerCertificate=no;'
-    'Connection Timeout=30;'
-)
+# Pegar string de conexão do ambiente
+connection_string = os.getenv('DB_CONNECTION_STRING')
 
 # Ajuste a string de conexão para SQLAlchemy
 engine = create_engine(f'mssql+pyodbc:///?odbc_connect={connection_string}')
