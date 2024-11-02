@@ -70,7 +70,7 @@ Siga estas etapas para configurar e executar a aplicação localmente:
 
 3. **Instale as dependências:**
    ```bash
-   pip install requirements.txt
+   pip install -r requirements.txt
    ```
 
 4. **Configure a string de conexão do banco e da API no `app.py`:**
@@ -87,9 +87,25 @@ Siga estas etapas para configurar e executar a aplicação localmente:
 ## 📊 Estrutura do site
 
 - **Inicio**: Area inicial para acessar tabelas do banco.
-- **Web Scraping**: Possibilita o usuario .
-- **Arquivo**: Controla os metadados dos arquivos carregados pelos usuários.
-- **Previsao**: Registra os resultados das previsões de demanda para cada produto.
+   ```bash
+   Aqui o usuario pode utilizar o email para logar e acessar as tabelas com os dados do banco.
+   ```
+- **Web Scraping**: Possibilita o usuario pegar dados de um site especificado.
+  ```bash
+   O usuario pode utilizar o link de um site com produtos sustentáveis e realizar um scraping, assim pegando dados reais e inserindo em nosso banco.
+   ```
+- **Machine Learning**: Controla os metadados dos arquivos carregados pelos usuários.
+  ```bash
+   O usuário pode realizar previsões com base em todos os dados coletados, tanto de demanda quanto de preço
+   ```
+- **Requisição API**: Consulta API de produtos sustentaveis.
+     ```bash
+   O usuário consegue realizar requisições para API de produtos sustentaveis e inserir elas no banco, além de trazer para excel.
+   ```
+
+## ATENÇÃO
+
+- É possivel ocorrer falha de dados devido a falta deles ou falha na conexão dos servidores da Azure.
 
 ## 💻 Requisitos
 
